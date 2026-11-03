@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Administration du festival</title>
+    <style>
+      :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #25213c; background: #f7f5f0; --ink: #25213c; --muted: #716d82; --purple: #5142a0; --line: #e8e3dc; --surface: #fffefa; }
+      * { box-sizing: border-box; }
+      body { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 2rem 0 4rem; }
+      header {
+        position: relative;
+        overflow: hidden;
+        padding: clamp(2rem, 6vw, 4rem);
+        border: 1px solid #4b4276;
+        border-radius: 26px;
+        color: white;
+        background: radial-gradient(ellipse at 83% 12%, #7663c1 0, transparent 34%), linear-gradient(125deg, #292442, #51428a);
+        box-shadow: 0 24px 60px #33295c24;
+        isolation: isolate;
+      }
+      header::after { position: absolute; z-index: -1; right: -75px; bottom: -230px; width: 430px; height: 430px; border: 1px solid #ffffff38; border-radius: 50%; box-shadow: 0 0 0 34px #ffffff0a, 0 0 0 78px #ffffff07; content: ""; }
+      header h1 { margin: 0; font-size: clamp(2.3rem, 6vw, 4.3rem); line-height: 1; letter-spacing: -.065em; }
+      header p { margin: 1.25rem 0 0; }
+      header a { color: #ded9f4; font-weight: 700; text-decoration: none; }
+      header a:hover { color: white; }
+      section { margin: 1.25rem 0; padding: clamp(1.2rem, 3vw, 2rem); border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: 0 8px 24px #32274c08; }
+      section h2 { margin: 0 0 1.25rem; font-size: 1.5rem; letter-spacing: -.04em; }
+      #form-heading { color: var(--purple); }
+      form#performance-form, form#artist-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+      label { display: grid; min-width: 0; gap: .45rem; color: #504c60; font-size: .88rem; font-weight: 700; }
+      input, select, textarea, button { width: 100%; min-width: 0; max-width: 100%; padding: .78rem .9rem; border: 1px solid #ded9e7; border-radius: 11px; color: var(--ink); background: #fff; font: inherit; }
+      input, select, textarea { transition: border-color .2s ease, box-shadow .2s ease; }
+      input:focus, select:focus, textarea:focus { outline: none; border-color: #8273c5; box-shadow: 0 0 0 3px #7666bd20; }
+      button { cursor: pointer; font-weight: 750; transition: transform .2s ease, box-shadow .2s ease, background .2s ease; }
+      button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px #32274c14; }
+      button[type="submit"] { border-color: var(--purple); color: white; background: var(--purple); }
+      button[type="submit"]:hover { background: #423483; }
+      textarea { min-height: 5rem; resize: vertical; }
+      #solo-fields, #lineup-fields, #workshop-fields { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+      [hidden] { display: none !important; }
+      .actions { display: flex; flex-wrap: wrap; gap: .65rem; align-items: center; }
+      #performance-form > .actions { grid-column: 1 / -1; }
+      .status { min-height: 1.5rem; color: var(--muted); }
+      .error { color: #a21e34; }
+      #schedule { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: .9rem; }
+      #schedule article { min-width: 0; margin: 0; padding: 1.2rem; border: 1px solid var(--line); border-radius: 16px; background: #fff; transition: transform .25s ease, box-shadow .25s ease; }
+      #schedule article:hover { transform: perspective(900px) rotateX(1deg) translateY(-3px); box-shadow: 0 14px 32px #32274c12; }
+      #schedule h3 { margin: 0 0 .6rem; font-size: 1.1rem; }
+      #schedule p { color: var(--muted); line-height: 1.55; }
+      .schedule-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .6rem; }
+      .schedule-head h3 { margin: 0; }
+      .schedule-kind { flex-shrink: 0; padding: .35rem .55rem; border-radius: 999px; color: #5142a0; background: #eeeafd; font-size: .68rem; font-weight: 800; }
+      .schedule-time { margin: .8rem 0 .35rem; color: #5142a0 !important; font-weight: 800; }
+      .schedule-meta { margin: 0; font-size: .9rem; }
+      .schedule-summary { margin: .75rem 0; padding-top: .75rem; border-top: 1px solid var(--line); font-size: .9rem; }
+      .schedule-status { display: inline-flex; margin: .15rem 0 .7rem; padding: .35rem .55rem; border-radius: 8px; color: #70402e; background: #fff0e8; font-size: .75rem; font-weight: 750; }
+      #schedule article .actions { margin: .8rem 0; }
+      #schedule article .actions button { width: auto; }
+      #schedule form.actions input { min-width: 150px; flex: 1; }
+      @media (max-width: 620px) {
+        body { width: min(540px, calc(100% - 28px)); padding-top: 1rem; }
+        header { padding: 2rem 1.5rem; border-radius: 22px; }
+        form#performance-form, form#artist-form, #solo-fields, #lineup-fields, #workshop-fields { grid-template-columns: 1fr; }
+        #solo-fields, #lineup-fields, #workshop-fields { grid-column: auto; }
+      }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Administration du festival</h1>
+      <p><a href="/" style="color:white">← Retour au programme</a></p>
+    </header>
+    <p id="status" class="status" role="status"></p>
+    <section>
+      <h2 id="form-heading">Programmer un spectacle</h2>
+      <form id="performance-form">
+        <label>Type de spectacle
+          <select name="kind" id="kind">
+            <option value="solo">Spectacle solo</option>
+            <option value="lineup">Plateau d'humour</option>
+            <option value="workshop">Atelier</option>
+          </select>
+        </label>
+        <label>Titre <input name="title" required></label>
+        <label>Lieu <select name="venue" id="venue" required></select></label>
+        <label>Date et heure <input name="start" type="datetime-local" required></label>
+        <label>Durée (minutes) <input name="duration_minutes" type="number" min="1" max="360" required></label>
+        <label>Description <textarea name="description"></textarea></label>
+        <div id="solo-fields"><label>Artiste <select name="artist" id="artist"></select></label><label>Âge minimum <input name="min_age" type="number" min="0" max="18" value="0"></label></div>
+        <div id="lineup-fields"><label>Maître·sse de cérémonie <select name="host" id="host"></select></label><label>Artistes (identifiants séparés par des virgules) <input name="acts" placeholder="nora-lebrun, max-pellerin"></label></div>
+        <div id="workshop-fields"><label>Intervenant·e <select name="teacher" id="teacher"></select></label><label>Nombre maximal de participants <input name="max_participants" type="number" min="1"></label></div>
+        <div class="actions"><button type="submit">Enregistrer le spectacle</button><button type="button" id="clear-edit">Annuler la modification</button></div>
+      </form>
+    </section>
+    <section>
+      <h2>Ajouter un artiste</h2>
+      <form id="artist-form">
+        <label>Nom <input name="name" required></label>
+        <label>Biographie <textarea name="bio"></textarea></label>
+        <label>Adresse de la photo <input name="photo_url" type="url"></label>
+        <button type="submit">Ajouter l'artiste</button>
+      </form>
+    </section>
+    <section>
+      <h2>Planning des spectacles</h2>
+      <div id="schedule"></div>
+    </section>
+    <script>
+      const statusLine = document.getElementById("status");
+      const form = document.getElementById("performance-form");
+      const editingId = { value: "" };
+      const editingPerformance = { value: null };
+      let artists = [];
+      let venues = [];
+      let performances = [];
+
+      function report(message, isError = false) {
+        statusLine.textContent = message;
+        statusLine.className = isError ? "status error" : "status";
+      }
+
+      async function request(path, options = {}) {
+        const response = await fetch(path, {
+          ...options,
+          headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+        });
+        if (response.status === 204) return null;
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.detail || `Request failed (${response.status})`);
+        return body;
+      }
+
+      function fillSelect(id, values) {
+        const select = document.getElementById(id);
+        select.replaceChildren(...values.map((value) => {
+          const option = document.createElement("option");
+          option.value = value.slug;
+          option.textContent = `${value.name} (${value.slug})`;
+          return option;
+        }));
+      }
+
+      function updateKindFields() {
+        const kind = document.getElementById("kind").value;
+        document.getElementById("solo-fields").hidden = kind !== "solo";
+        document.getElementById("lineup-fields").hidden = kind !== "lineup";
+        document.getElementById("workshop-fields").hidden = kind !== "workshop";
+      }
+
+      const kindLabels = { solo: "Spectacle solo", lineup: "Plateau d'humour", workshop: "Atelier" };
+
+      function formatDate(value) {
+        return new Intl.DateTimeFormat("fr-FR", {
+          weekday: "long", day: "numeric", month: "long", year: "numeric",
+        }).format(new Date(`${value}T12:00:00`));
+      }
+
+      function performanceArtists(performance) {
+        const names = performance.artists.map((artist) => artist.name);
+        return performance.kind === "lineup" ? names.filter((name) => name !== performance.artists[0]?.name) : names;
+      }
+
+      function renderSchedule() {
+        const root = document.getElementById("schedule");
+        root.replaceChildren();
+        for (const performance of performances) {
+          const article = document.createElement("article");
+          const head = document.createElement("div");
+          head.className = "schedule-head";
+          const heading = document.createElement("h3");
+          heading.textContent = performance.title;
+          const kind = document.createElement("span");
+          kind.className = "schedule-kind";
+          kind.textContent = kindLabels[performance.kind] || performance.kind;
+          head.append(heading, kind);
+          const date = document.createElement("p");
+          date.className = "schedule-time";
+          date.textContent = `${formatDate(performance.festival_day)} · ${performance.start.slice(11)} – ${performance.end.slice(11)}`;
+          const venue = document.createElement("p");
+          venue.className = "schedule-meta";
+          venue.textContent = `${performance.venue_name} · ${performance.duration_minutes} min`;
+          const cast = document.createElement("p");
+          cast.className = "schedule-summary";
+          const castNames = performanceArtists(performance);
+          cast.textContent = `${performance.kind === "workshop" ? "Intervenant·e" : performance.kind === "lineup" ? "Artistes" : "À l'affiche"} : ${castNames.join(", ")}`;
+          const description = performance.description
+            ? document.createElement("p")
+            : null;
+          if (description) {
+            description.className = "schedule-meta";
+            description.textContent = performance.description;
+          }
+          const actions = document.createElement("div");
+          actions.className = "actions";
+          const edit = document.createElement("button");
+          edit.textContent = "Modifier";
+          edit.addEventListener("click", () => editPerformance(performance));
+          const cancel = document.createElement("button");
+          cancel.textContent = "Annuler le spectacle";
+          cancel.addEventListener("click", () => cancelPerformance(performance));
+          actions.append(edit, cancel);
+          article.append(head, date, venue, cast);
+          if (description) article.append(description);
+          if (performance.kind === "solo" && performance.min_age > 0) {
+            const age = document.createElement("span");
+            age.className = "schedule-status";
+            age.textContent = `À partir de ${performance.min_age} ans`;
+            article.append(age);
+          }
+          if (performance.kind === "workshop") {
+            const places = document.createElement("span");
+            places.className = "schedule-status";
+            places.textContent = `${performance.places_left} / ${performance.max_participants} places disponibles`;
+            article.append(places);
+          }
+          article.append(actions);
+          if (performance.kind === "workshop") {
+            const register = document.createElement("form");
+            register.className = "actions";
+            const input = document.createElement("input");
+            input.name = "name";
+            input.placeholder = "Nom du participant";
+            input.setAttribute("aria-label", "Nom du participant");
+            input.required = true;
+            const button = document.createElement("button");
+            button.textContent = "Inscrire";
+            register.append(input, button);
+            register.addEventListener("submit", async (event) => {
+              event.preventDefault();
+              try {
+                await request(`/api/performances/${encodeURIComponent(performance.id)}/participants`, {
+                  method: "POST",
+                  body: JSON.stringify({ name: input.value }),
+                });
+                report("Participant inscrit.");
+                await refresh();
+              } catch (error) {
+                report(error.message, true);
+              }
+            });
+            article.append(register);
+          }
+          root.append(article);
+        }
+      }
+
+      function editPerformance(performance) {
+        editingId.value = performance.id;
+        editingPerformance.value = performance;
+        document.getElementById("form-heading").textContent = `Modifier « ${performance.title} »`;
+        form.elements.kind.value = performance.kind;
+        form.elements.title.value = performance.title;
+        form.elements.venue.value = performance.venue;
+        form.elements.start.value = performance.start;
+        form.elements.duration_minutes.value = performance.duration_minutes;
+        form.elements.description.value = performance.description || "";
+        if (performance.kind === "solo") {
+          form.elements.artist.value = performance.artist;
+          form.elements.min_age.value = performance.min_age;
+        } else if (performance.kind === "lineup") {
+          form.elements.host.value = performance.host;
+          form.elements.acts.value = performance.acts.join(", ");
+        } else {
+          form.elements.teacher.value = performance.teacher;
+          form.elements.max_participants.value = performance.max_participants;
+        }
+        updateKindFields();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function performanceBody() {
+        const values = new FormData(form);
+        const kind = values.get("kind");
+        const body = {
+          kind,
+          title: values.get("title"),
+          venue: values.get("venue"),
+          start: values.get("start"),
+          duration_minutes: Number(values.get("duration_minutes")),
+          description: values.get("description"),
+        };
+        if (kind === "solo") {
+          body.artist = values.get("artist");
+          body.min_age = Number(values.get("min_age") || 0);
+        } else if (kind === "lineup") {
+          body.host = values.get("host");
+          body.acts = values.get("acts").split(",").map((slug) => slug.trim()).filter(Boolean);
+        } else {
+          body.teacher = values.get("teacher");
+          body.max_participants = Number(values.get("max_participants"));
+          if (editingPerformance.value?.kind === "workshop") {
+            body.participants = editingPerformance.value.participants;
+          }
+        }
+        return body;
+      }
+
+      async function refresh() {
+        const [artistsData, venuesData, scheduleData] = await Promise.all([
+          request("/api/artists"),
+          request("/api/venues"),
+          request("/api/programme"),
+        ]);
+        artists = artistsData;
+        venues = venuesData;
+        performances = scheduleData;
+        for (const select of ["artist", "host", "teacher"]) fillSelect(select, artists);
+        fillSelect("venue", venues);
+        renderSchedule();
+      }
+
+      async function cancelPerformance(performance) {
+        if (!confirm(`Cancel ${performance.title}?`)) return;
+        try {
+          await request(`/api/performances/${encodeURIComponent(performance.id)}`, { method: "DELETE" });
+          report(`Le spectacle « ${performance.title} » a été annulé.`);
+          await refresh();
+        } catch (error) {
+          report(error.message, true);
+        }
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          const body = performanceBody();
+          if (editingId.value) {
+            await request(`/api/performances/${encodeURIComponent(editingId.value)}`, {
+              method: "PUT",
+              body: JSON.stringify(body),
+            });
+            report("Le spectacle a été mis à jour.");
+          } else {
+            await request("/api/performances", {
+              method: "POST",
+              body: JSON.stringify(body),
+            });
+            report("Le spectacle a été programmé.");
+          }
+          form.reset();
+          editingId.value = "";
+          editingPerformance.value = null;
+          document.getElementById("form-heading").textContent = "Programmer un spectacle";
+          updateKindFields();
+          await refresh();
+        } catch (error) {
+          report(error.message, true);
+        }
+      });
+
+      document.getElementById("artist-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const body = Object.fromEntries(new FormData(event.currentTarget));
+        try {
+          const artist = await request("/api/artists", {
+            method: "POST",
+            body: JSON.stringify(body),
+          });
+          report(`L'artiste ${artist.name} a été ajouté.`);
+          event.currentTarget.reset();
+          await refresh();
+        } catch (error) {
+          report(error.message, true);
+        }
+      });
+
+      document.getElementById("kind").addEventListener("change", updateKindFields);
+      document.getElementById("clear-edit").addEventListener("click", () => {
+        form.reset();
+        editingId.value = "";
+        editingPerformance.value = null;
+        document.getElementById("form-heading").textContent = "Programmer un spectacle";
+        updateKindFields();
+      });
+      updateKindFields();
+      refresh().catch((error) => report(error.message, true));
+    </script>
+  </body>
+</html>
